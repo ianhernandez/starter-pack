@@ -64,7 +64,7 @@ describe("tasks routes", () => {
   });
 
   it("get /tasks lists all tasks", async () => {
-    const response = await client.tasks.$get();
+    const response = await client.tasks.$get({});
     expect(response.status).toBe(200);
     if (response.status === 200) {
       const json = await response.json();
