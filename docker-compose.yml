@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: api_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./apps/api/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 9999
+    environment:
+      - NODE_ENV=production
+      - PORT=9999
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/api_db}
+    networks:
+      - dokploy-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:9999/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # spa:
+  #   build:
+  #     context: ./apps/spa
+  #     dockerfile: Dockerfile
+  #     args:
+  #       - VITE_API_URL=${VITE_API_URL:-https://api.yourdomain.com}
+  #   restart: always
+  #   ports:
+  #     - 3000
+  #   networks:
+  #     - dokploy-network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.spa-app.rule=Host(`starter-app-spa-db6872-208-113-131-145.traefik.me/`)"
+  #     - "traefik.http.routers.spa-app.entrypoints=websecure"
+  #     - "traefik.http.routers.spa-app.tls.certResolver=letsencrypt"
+  #     - "traefik.http.services.spa-app.loadbalancer.server.port=3000"
+  #   depends_on:
+  #     - api
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:9999}
+    restart: always
+    ports:
+      - 3000
+    networks:
+      - dokploy-network
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.spa-app.rule=Host(`notarypublicupland.com`)"
+      - "traefik.http.routers.spa-app.entrypoints=websecure"
+      - "traefik.http.routers.spa-app.tls.certResolver=letsencrypt"
+      - "traefik.http.services.spa-app.loadbalancer.server.port=3000"
+volumes:
+  postgres-data:
+
+networks:
+  dokploy-network:
+    external: true
