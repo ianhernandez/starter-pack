@@ -1,22 +1,27 @@
 FROM node:22-alpine AS development-dependencies-env
-COPY . /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 FROM node:22-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-RUN npm ci --omit=dev
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
 FROM node:22-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-RUN npm run build
+COPY . ./
+COPY --from=development-dependencies-env /app/node_modules ./node_modules
+RUN pnpm build
 
 FROM node:22-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY package.json ./
+COPY --from=production-dependencies-env /app/node_modules ./node_modules
+COPY --from=build-env /app/build ./build
+EXPOSE 3000
+CMD ["pnpm", "start"]
