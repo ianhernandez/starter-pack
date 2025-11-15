@@ -74,10 +74,15 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
+        # This is for build-time client-side code (browser access)
         - VITE_API_URL=${VITE_API_URL:-http://localhost:9999}
     restart: always
     ports:
       - 3000
+    environment:
+      # Server-side SSR should use Docker network hostname
+      - API_URL=http://api:9999
+      # Client-side code uses the build arg injected via Vite
     networks:
       - dokploy-network
     depends_on:
