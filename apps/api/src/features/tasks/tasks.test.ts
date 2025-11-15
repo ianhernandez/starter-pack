@@ -5,12 +5,12 @@ import { afterAll, beforeAll, describe, expect, expectTypeOf, it } from "vitest"
 import { ZodIssueCode } from "zod";
 
 import db from "@/db";
-import { tasks } from "@/db/schema";
 import env from "@/env";
 import { ZOD_ERROR_CODES, ZOD_ERROR_MESSAGES } from "@/lib/constants";
 import { createTestApp } from "@/lib/create-app";
 
 import router from "./tasks.index";
+import { tasks } from "./tasks.schema";
 
 if (env.NODE_ENV !== "test") {
   throw new Error("NODE_ENV must be 'test'");
