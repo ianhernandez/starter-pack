@@ -1,10 +1,11 @@
 import { testClient } from "hono/testing";
 import { execSync } from "node:child_process";
-import fs from "node:fs";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import { afterAll, beforeAll, describe, expect, expectTypeOf, it } from "vitest";
 import { ZodIssueCode } from "zod";
 
+import db from "@/db";
+import { tasks } from "@/db/schema";
 import env from "@/env";
 import { ZOD_ERROR_CODES, ZOD_ERROR_MESSAGES } from "@/lib/constants";
 import { createTestApp } from "@/lib/create-app";
@@ -20,10 +21,13 @@ const client = testClient(createTestApp(router));
 describe("tasks routes", () => {
   beforeAll(async () => {
     execSync("pnpm drizzle-kit push");
+    // Clean up any existing test data
+    await db.delete(tasks);
   });
 
   afterAll(async () => {
-    fs.rmSync("test.db", { force: true });
+    // Clean up test data after tests complete
+    await db.delete(tasks);
   });
 
   it("post /tasks validates the body when creating", async () => {
@@ -40,7 +44,7 @@ describe("tasks routes", () => {
     }
   });
 
-  const id = 1;
+  let id: number;
   const name = "Learn vitest";
 
   it("post /tasks creates a task", async () => {
@@ -55,6 +59,7 @@ describe("tasks routes", () => {
       const json = await response.json();
       expect(json.name).toBe(name);
       expect(json.done).toBe(false);
+      id = json.id; // Capture the actual ID
     }
   });
 
