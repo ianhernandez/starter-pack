@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-pnpm drizzle-kit migrate
+pnpm tsx node_modules/.bin/drizzle-kit migrate
 
 echo "Starting application..."
 exec "$@"
