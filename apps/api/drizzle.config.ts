@@ -1,6 +1,5 @@
+/* eslint-disable node/no-process-env */
 import { defineConfig } from "drizzle-kit";
-
-import env from "@/env";
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
@@ -8,6 +7,6 @@ export default defineConfig({
   dialect: "postgresql",
   casing: "snake_case",
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: process.env.DATABASE_URL!,
   },
 });
