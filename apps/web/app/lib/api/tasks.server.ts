@@ -1,45 +1,28 @@
 /**
- * Client-side API client for React Router
- * This runs in the browser and uses public-facing URLs
+ * Task-specific API functions for React Router
+ * This runs on the server during SSR
+ *
+ * Development (local): Uses http://localhost:9999
+ * Production (Docker): Uses http://api:9999 via API_URL env var
  */
 
-// Use environment variable or default to localhost for client-side
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9999';
+import { apiRequest } from '../api.server';
 
-export async function apiRequest<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-// Client-side API functions
+// Get all tasks
 export async function getTasks() {
   return apiRequest<Array<{ id: number; name: string; done: boolean }>>(
     '/tasks'
   );
 }
 
+// Get single task
 export async function getTask(id: number) {
   return apiRequest<{ id: number; name: string; done: boolean }>(
     `/tasks/${id}`
   );
 }
 
+// Create task
 export async function createTask(data: { name: string; done?: boolean }) {
   return apiRequest<{ id: number; name: string; done: boolean }>('/tasks', {
     method: 'POST',
@@ -47,6 +30,7 @@ export async function createTask(data: { name: string; done?: boolean }) {
   });
 }
 
+// Update task
 export async function updateTask(
   id: number,
   data: { name?: string; done?: boolean }
@@ -60,6 +44,7 @@ export async function updateTask(
   );
 }
 
+// Delete task
 export async function deleteTask(id: number) {
   return apiRequest<void>(`/tasks/${id}`, {
     method: 'DELETE',

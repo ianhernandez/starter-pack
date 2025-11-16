@@ -1,14 +1,14 @@
 import { Form, useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/tasks";
-import * as apiServer from "~/lib/api.server";
+import * as taskApi from "~/lib/api/tasks.server";
 
 /**
  * LOADER - Runs on the server during SSR
- * Uses api.server.ts which connects via Docker network (http://api:9999)
+ * Uses tasks.server.ts which connects via Docker network (http://api:9999)
  */
 export async function loader({ }: Route.LoaderArgs) {
   try {
-    const tasks = await apiServer.getTasks();
+    const tasks = await taskApi.getTasks();
     return { tasks };
   } catch (error) {
     console.error("Failed to load tasks:", error);
@@ -18,7 +18,7 @@ export async function loader({ }: Route.LoaderArgs) {
 
 /**
  * ACTION - Handles form submissions on the server
- * Also uses api.server.ts for server-side operations
+ * Also uses tasks.server.ts for server-side operations
  */
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -27,14 +27,14 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     if (intent === "create") {
       const name = formData.get("name") as string;
-      await apiServer.createTask({ name, done: false });
+      await taskApi.createTask({ name, done: false });
     } else if (intent === "toggle") {
       const id = Number(formData.get("id"));
       const done = formData.get("done") === "true";
-      await apiServer.updateTask(id, { done: !done });
+      await taskApi.updateTask(id, { done: !done });
     } else if (intent === "delete") {
       const id = Number(formData.get("id"));
-      await apiServer.deleteTask(id);
+      await taskApi.deleteTask(id);
     }
 
     return { success: true };
@@ -96,7 +96,7 @@ export default function Tasks() {
           tasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-center gap-3 p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
+              className="flex items-center gap-3 p-4 bg-z border rounded-lg hover:shadow-md transition-shadow"
             >
               {/* Toggle Task Form */}
               <Form method="post" className="flex-shrink-0">
